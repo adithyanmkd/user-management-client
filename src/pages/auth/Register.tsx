@@ -1,10 +1,8 @@
 "use client";
 
-import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-// import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,7 +22,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/configs/store";
+import { registerUser, clearError } from "@/configs/store/slices/authSlice";
 
 const formSchema = z.object({
   name: z.string().min(1).min(1).max(50),
@@ -36,20 +39,33 @@ export default function Register() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
+  const navigate = useNavigate();
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { status, user, error } = useSelector((state: RootState) => state.auth);
+
+  function onSubmit(formData: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>,
-      );
+      dispatch(registerUser(formData));
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
     }
   }
+
+  useEffect(() => {
+    if (status === "succeeded" && user) {
+      navigate("/");
+    }
+  }, [status, user, navigate]);
+
+  // error hiding after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch(clearError());
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [error, dispatch]);
 
   return (
     <Card className="mx-auto w-full max-w-sm">
@@ -112,10 +128,15 @@ export default function Register() {
               )}
             />
 
-            <Button className="w-full" type="submit">
+            <Button className="w-full cursor-pointer" type="submit">
               Register
             </Button>
           </form>
+          {error && (
+            <div className="flex h-10 items-center justify-center rounded-md border border-red-500 bg-red-50">
+              <span className="text-sm font-medium text-red-500">{error}</span>
+            </div>
+          )}
           <div className="mt-4 text-center text-sm">
             Already have an account?
             <Link to="/auth/login" className="underline">

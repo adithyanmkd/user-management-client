@@ -1,6 +1,5 @@
 "use client";
 
-import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +24,12 @@ import {
 } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/configs/store";
+import { clearError, loginUser } from "@/configs/store/slices/authSlice";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 const formSchema = z.object({
   email: z.string(),
   password: z.string(),
@@ -35,19 +40,33 @@ const Login = () => {
     resolver: zodResolver(formSchema),
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const { error, status, user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  function onSubmit(credentials: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>,
-      );
+      console.log(credentials);
+      dispatch(loginUser(credentials));
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
     }
   }
+
+  useEffect(() => {
+    if (status === "succeeded") {
+      navigate("/");
+    }
+  }, [status, user, navigate]);
+
+  // toast message handling
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch(clearError());
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [dispatch, error]);
 
   return (
     <Card className="mx-auto w-full max-w-sm">
@@ -93,12 +112,19 @@ const Login = () => {
               )}
             />
 
-            <Button className="w-full" type="submit">
+            <Button className="w-full cursor-pointer" type="submit">
               Submit
             </Button>
+            {error && (
+              <div className="flex h-10 items-center justify-center rounded-md border border-red-500 bg-red-50">
+                <span className="text-sm font-medium text-red-500">
+                  {error}
+                </span>
+              </div>
+            )}
           </form>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            Don&apos;t have an account?
             <Link to="/auth/register" className="underline">
               Register
             </Link>
