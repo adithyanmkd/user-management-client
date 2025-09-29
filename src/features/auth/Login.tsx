@@ -2,49 +2,67 @@ import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import { useRegisterMutation } from "./authApi";
-import { setCredentials } from "./authSlice";
-import type { FormData } from "./authTypes";
-import type { FormErrors } from "../../../src/shared/types/index";
+import { useLoginMutation } from "./authApi";
+import { setCredentials, logout } from "./authSlice";
 import type { RootState } from "../../app/store";
+import { validateToken } from "../../shared/utils/axios";
 
-const Register = () => {
+interface FormData {
+  email: string;
+  password: string;
+}
+
+interface Errors {
+  email?: string;
+  password?: string;
+}
+
+const Login = () => {
   const [formData, setFormData] = useState<FormData>({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
-  const [register, { isLoading, error }] = useRegisterMutation(); // register api
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<Errors>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [login, { error }] = useLoginMutation();
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const token = useSelector((state: RootState) => state.auth.token);
-  console.log("user token exist", token);
+
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    validateToken(token)
+      .then((user) => {
+        console.log("user log:", user);
+        if (user) {
+          navigate("/");
+        } else {
+          dispatch(logout());
+          navigate("/login");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
     if (token) {
       navigate("/");
     }
-  }, [token, navigate]);
+  }, [dispatch, navigate, token]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // form validation
-  const validateForm = (): FormErrors => {
-    const newErrors: FormErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+  const validateForm = (): Errors => {
+    const newErrors: Errors = {};
     if (!formData.email.includes("@"))
       newErrors.email = "Valid email is required";
-    if (formData.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
     return newErrors;
   };
 
@@ -53,16 +71,12 @@ const Register = () => {
     const validationErrors = validateForm();
 
     if (Object.keys(validationErrors).length === 0) {
+      console.log("login");
       try {
-        const response = await register(formData).unwrap();
-        if (response.success && response.data?.token) {
-          localStorage.setItem("token", response.data.token);
-          dispatch(
-            setCredentials({
-              token: response.data.token,
-              user: response.data.user,
-            }),
-          );
+        const response = await login(formData).unwrap();
+        if (response.success) {
+          const { token, user } = response.data;
+          dispatch(setCredentials({ token, user }));
           navigate("/");
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,29 +92,9 @@ const Register = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
-          Register
+          Log In
         </h2>
         <div className="space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
-              placeholder="Enter your name"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
           <div>
             <label
               htmlFor="email"
@@ -137,31 +131,9 @@ const Register = () => {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
               placeholder="Enter your password"
             />
-            {errors.password && (
+            {/* {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-            )}
-          </div>
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              id="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
-              placeholder="Confirm your password"
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.confirmPassword}
-              </p>
-            )}
+            )} */}
           </div>
           {/* api error */}
           {error && <p className="mt-1 text-sm text-red-600">{apiError}</p>}
@@ -194,18 +166,18 @@ const Register = () => {
                   ></path>
                 </svg>
               ) : (
-                "Register"
+                "Log In"
               )}
             </button>
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?
+              Don't have an account?
               <Link
-                to="/login"
-                className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
+                to="/register"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
               >
-                Log in
+                Register
               </Link>
             </p>
           </div>
@@ -215,4 +187,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Login;
