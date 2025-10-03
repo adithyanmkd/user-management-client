@@ -19,8 +19,23 @@ export const profileApi = api.injectEndpoints({
         body, // body contains current password old password
       }),
     }),
+
+    // upload profile
+    uploadProfile: builder.mutation({
+      query: (imageUrl) => ({
+        url: "profile/upload-profile",
+        method: "PATCH",
+        body: imageUrl,
+      }),
+    }),
   }),
+
+  // upload profile
   overrideExisting: false,
 });
 
-export const { useChangeNameMutation, useChangePasswordMutation } = profileApi;
+export const {
+  useChangeNameMutation,
+  useChangePasswordMutation,
+  useUploadProfileMutation,
+} = profileApi;

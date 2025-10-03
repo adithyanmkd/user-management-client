@@ -2,13 +2,21 @@ import { useState, type ChangeEvent } from "react";
 import { Edit3, Save, X, Eye, EyeOff, User, Camera, Check } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
-
-import { useChangeNameMutation, useChangePasswordMutation } from "./profileApi";
+import {
+  useChangeNameMutation,
+  useChangePasswordMutation,
+  useUploadProfileMutation,
+} from "./profileApi";
+import { type CloudinaryUploadResponse } from "../../shared/types";
+import ClipLoader from "react-spinners/ClipLoader";
 
 const ProfileCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
+
   const [changeName] = useChangeNameMutation();
-  const [changePassword, { error }] = useChangePasswordMutation();
+  const [changePassword] = useChangePasswordMutation();
+  const [uploadProfile] = useUploadProfileMutation();
+
   const userDetails = {
     name: user?.name,
     avatar: user?.avatar,
@@ -17,7 +25,7 @@ const ProfileCard = () => {
   };
 
   const [profile, setProfile] = useState(userDetails);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Edit states for individual fields
   const [isEditingName, setIsEditingName] = useState(false);
@@ -39,14 +47,41 @@ const ProfileCard = () => {
   // Error states
   const [passwordError, setPasswordError] = useState("");
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        setProfileImage(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "user-upload-preset");
+    formData.append("cloud_name", "dhrn2lbuo");
+
+    setIsUploading(true);
+    // response from cloudinary
+    const url = "https://api.cloudinary.com/v1_1/dhrn2lbuo/image/upload";
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = (await res.json()) as Partial<CloudinaryUploadResponse>;
+
+    setIsUploading(false);
+    if (data.secure_url) {
+      try {
+        // response from backend
+        const response = await uploadProfile({
+          imageUrl: data.secure_url,
+        }).unwrap();
+        console.log(response);
+        localStorage.setItem("user", JSON.stringify(response.data));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error(error);
+      }
+    } else {
+      console.error("Upload failed or no URL returned:", data);
     }
   };
 
@@ -141,9 +176,13 @@ const ProfileCard = () => {
         <div className="-mt-16 mb-6 flex justify-center">
           <div className="relative">
             <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-gray-200 shadow-lg">
-              {profileImage ? (
+              {isUploading ? (
+                <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                  <ClipLoader size={24} color="#4B5563" /> {/* Spinner */}
+                </div>
+              ) : profile.avatar ? (
                 <img
-                  src={profileImage}
+                  src={profile.avatar}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
