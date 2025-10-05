@@ -6,10 +6,12 @@ import type {
   RegisterRequest,
   LoginResponse,
   LoginRequest,
+  AdminLoginRequest,
 } from "./authTypes";
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    // user register
     register: builder.mutation<RegisterResponse, RegisterRequest>({
       query: (registrationData) => ({
         url: "auth/register",
@@ -17,9 +19,20 @@ export const authApi = api.injectEndpoints({
         body: registrationData,
       }),
     }),
+
+    // user login
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
         url: "auth/login",
+        method: "POST",
+        body: credentials,
+      }),
+    }),
+
+    // admin login
+    adminLogin: builder.mutation<LoginResponse, AdminLoginRequest>({
+      query: (credentials) => ({
+        url: "admin/auth/login",
         method: "POST",
         body: credentials,
       }),
@@ -29,4 +42,5 @@ export const authApi = api.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useRegisterMutation, useLoginMutation } = authApi;
+export const { useRegisterMutation, useLoginMutation, useAdminLoginMutation } =
+  authApi;

@@ -37,7 +37,7 @@ const Login = () => {
 
     validateToken(token)
       .then((user) => {
-        console.log("user log:", user);
+        // console.log("user log:", user);
         if (user) {
           navigate("/");
         } else {

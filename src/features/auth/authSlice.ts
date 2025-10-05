@@ -24,6 +24,17 @@ const setCredentialsFunc = (
   localStorage.setItem("user", JSON.stringify(action.payload.user));
 };
 
+const loginFunc = (
+  state: AuthState,
+  action: PayloadAction<{ user: User; token: string }>,
+) => {
+  console.log("dispatch function called.");
+  state.user = action.payload.user;
+  state.token = action.payload.token;
+  localStorage.setItem("token", JSON.stringify(action.payload.token));
+  localStorage.setItem("user", JSON.stringify(action.payload.user));
+};
+
 const logoutFunc = (state: AuthState) => {
   state.token = null;
   state.user = null;
@@ -35,10 +46,11 @@ export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setCredentials: setCredentialsFunc,
+    setCredentials: setCredentialsFunc, // login
+    login: loginFunc,
     logout: logoutFunc,
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, login } = authSlice.actions;
 export default authSlice.reducer;

@@ -59,7 +59,7 @@ const Navbar = () => {
         </Link>
         <div className="flex items-center space-x-4">
           <button className="focus:outline-none" title="View Profile">
-            {user && (
+            {user?.role === "user" && (
               <Link
                 to={"/profile"}
                 className="bg-blu flex size-10 cursor-pointer items-center justify-center rounded-full bg-blue-200"

@@ -2,19 +2,31 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  password: string;
   avatar: string;
   role: "user" | "admin";
 }
 
-export interface RegisterResponse {
+// export interface RegisterResponse {
+//   success: boolean;
+//   message: string;
+//   data?: {
+//     user: User;
+//     token: string;
+//   };
+// }
+
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
-  data?: {
-    user: User;
-    token: string;
-  };
+  data: T;
 }
+
+export interface RegisterResponseData {
+  user: User;
+  token: string;
+}
+
+export type RegisterResponse = ApiResponse<RegisterResponseData>;
 
 export interface FormData {
   name: string;
@@ -29,23 +41,27 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    user: {
-      _id: string;
-      name: string;
-      email: string;
-      password: string;
-      avatar: string;
-      role: "user" | "admin";
-    };
-    token: string;
-  };
+export interface AuthUser {
+  _id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: "user" | "admin";
 }
+
+export interface LoginResponseData {
+  user: AuthUser;
+  token: string;
+}
+
+export type LoginResponse = ApiResponse<LoginResponseData>;
 
 export interface LoginRequest {
   email: string;
+  password: string;
+}
+
+export interface AdminLoginRequest {
+  username: string;
   password: string;
 }
