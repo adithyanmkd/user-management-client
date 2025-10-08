@@ -6,19 +6,10 @@ export interface User {
   role: "user" | "admin";
 }
 
-// export interface RegisterResponse {
-//   success: boolean;
-//   message: string;
-//   data?: {
-//     user: User;
-//     token: string;
-//   };
-// }
-
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
-  data: T;
+  data?: T;
 }
 
 export interface RegisterResponseData {

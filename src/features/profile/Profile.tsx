@@ -21,7 +21,6 @@ const ProfileCard = () => {
     name: user?.name,
     avatar: user?.avatar,
     email: user?.email,
-    password: user?.password,
   };
 
   const [profile, setProfile] = useState(userDetails);
@@ -66,6 +65,11 @@ const ProfileCard = () => {
 
     const data = (await res.json()) as Partial<CloudinaryUploadResponse>;
 
+    setProfile({
+      ...profile,
+      avatar: data.secure_url,
+    });
+
     setIsUploading(false);
     if (data.secure_url) {
       try {
@@ -73,7 +77,7 @@ const ProfileCard = () => {
         const response = await uploadProfile({
           imageUrl: data.secure_url,
         }).unwrap();
-        console.log(response);
+        // console.log(response);
         localStorage.setItem("user", JSON.stringify(response.data));
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

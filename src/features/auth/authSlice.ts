@@ -28,10 +28,9 @@ const loginFunc = (
   state: AuthState,
   action: PayloadAction<{ user: User; token: string }>,
 ) => {
-  console.log("dispatch function called.");
   state.user = action.payload.user;
   state.token = action.payload.token;
-  localStorage.setItem("token", JSON.stringify(action.payload.token));
+  localStorage.setItem("token", action.payload.token);
   localStorage.setItem("user", JSON.stringify(action.payload.user));
 };
 

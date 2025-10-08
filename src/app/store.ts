@@ -1,14 +1,18 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { api } from "../services/api";
-import authReducer from "../features/auth/authSlice";
+import { persistedAuthReducer } from "./persistConfig";
+import adminUsersReducer from "../features/dashboard/adminUsersSlice";
 
 export const store = configureStore({
   reducer: {
-    auth: authReducer,
+    auth: persistedAuthReducer,
+    users: adminUsersReducer,
     [api.reducerPath]: api.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
+    getDefaultMiddleware({
+      serializableCheck: false, // for redux-persist
+    }).concat(api.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

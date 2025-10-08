@@ -55,7 +55,13 @@ const AdminLogin = () => {
     setIsLoading(true);
     try {
       const res = await adminLogin(formData).unwrap();
+
+      if (!res.data) {
+        return new Error("No data returned");
+      }
+
       const { token, user } = res.data;
+      // console.log("token: ", token, "|", "user: ", user);
 
       if (user.role !== "admin") {
         setErrors({
